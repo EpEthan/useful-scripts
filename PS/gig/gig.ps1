@@ -88,13 +88,33 @@ Function Get-Ignore {
     Out-File -FilePath $(Join-Path -path $path -ChildPath ".gitignore") -Encoding ascii
 }
 
+function Get-TemplateList {
+    # get HTML from github
+    $HTML = Invoke-RestMethod "https://github.com/toptal/gitignore/tree/d6f8a6463a0863e22d3111a1703bca614d1fea85/templates"
+
+    # find all options using regex
+    $Pattern = '<a.*>(?<opt>[\w\d-\+_]+)\.gitignore<\/a>'
+    $AllMatches = ($HTML | Select-String $Pattern -AllMatches).Matches      # <a ...>TEMPLATE.gitignore</a>
+
+    # parse the results
+    $TemplateList = foreach ($Template in $AllMatches) {
+        [PSCustomObject]@{
+            'Template' = ($Template.Groups.Where{$_.Name -like 'opt'}).Value
+        }
+    }
+
+    # print results
+    Write-Output $TemplateList
+}
+
+
 
 
 #-----------------------------------------------------------[Execution]------------------------------------------------------------
 
 
 if ($List) {
-    Write-Output "fuck you. i ain't doing this shit."
+    Get-TemplateList
 }
 else {
     Get-Ignore -lst $ToIgnore -path $SavePath
